@@ -58,7 +58,8 @@ pub async fn collect_status(db: &Database) -> Result<DatabaseStatus> {
     })
 }
 
-async fn count_table(db: &Database, table: &str) -> Result<i64> {
+/// Count rows in a tracked table (allowlisted names only).
+pub async fn count_table(db: &Database, table: &str) -> Result<i64> {
     // Table names are from a fixed allowlist — not user input.
     let sql = format!("SELECT count() AS count FROM {table} GROUP ALL;");
     let mut response = db.query(sql).await?;

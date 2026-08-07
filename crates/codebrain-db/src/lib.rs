@@ -38,4 +38,4 @@ pub use queries::{
     highlight_excerpt, list_sources, neighbors, search_documents, search_symbols,
 };
 pub use resolve::{DocumentLookup, list_documents_for_resolution, resolve_wikilink};
-pub use status::{DatabaseStatus, TableCount, collect_status};
+pub use status::{DatabaseStatus, TableCount, collect_status, count_table};

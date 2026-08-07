@@ -42,6 +42,7 @@ path = "~/.local/share/codebrain/db"
 
 [embeddings]
 # none | fastembed | openai_compatible
+# Prefer fastembed for local semantic_search (first run downloads MiniLM ONNX).
 provider = "none"
 model = "all-MiniLM-L6-v2"
 dimension = 384

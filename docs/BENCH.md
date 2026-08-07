@@ -53,6 +53,50 @@ Breakdown on the same machine:
 - Extract concurrency follows CPU count (clamped 4–32), independent of `batch_size`
 - Mention linking uses a prebuilt `MentionIndex` (O(tokens) per note)
 
+## Embeddings dogfood (`fastembed`)
+
+Local ONNX MiniLM (`all-MiniLM-L6-v2`, dim 384). First run downloads the model into the fastembed cache
+(`FASTEMBED_CACHE_DIR` or `.fastembed_cache`; `HF_HOME` also accepted by `hf-hub`).
+
+```toml
+[embeddings]
+provider = "fastembed"
+model = "all-MiniLM-L6-v2"
+dimension = 384
+```
+
+After switching from `none`, run a full pass (content hashes alone would skip every file):
+
+```bash
+# Prefetch model if Hub downloads flake from the Rust client:
+#   python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Qdrant/all-MiniLM-L6-v2-onnx', cache_dir='$HOME/.cache/fastembed')"
+export HF_HOME="${HF_HOME:-$HOME/.cache/fastembed}"
+export FASTEMBED_CACHE_DIR="${FASTEMBED_CACHE_DIR:-$HOME/.cache/fastembed}"
+
+codebrain index --force   # or plain `index` when chunk table is empty (auto-force)
+codebrain doctor          # embeddings.dimension must be ok
+codebrain status          # chunk count > 0
+```
+
+If an older SurrealKV store errors on chunk/index ops after enabling vectors, point
+`database.path` at a fresh directory and re-index (graph-only DBs are cheap to rebuild).
+
+### Reference result (recorded)
+
+```text
+Machine: Apple M5, 16 GB RAM, macOS 26.x
+Commit:  post index --force + chunk persist fix (workspace 1.1.x)
+Corpus:  product-definition-service (~975 Ruby files, 1794 symbols)
+         + Obsidian vault (28 notes)
+Command: embeddings.provider=fastembed, batch_size=32, model cached
+Result:  cold ≈ 116 s → 2296 chunks (code 1794 + notes 502)
+         warm reindex ≈ 1.8 s (indexed=0)
+Daily DB (same machine, + Jira 19 issues + Confluence 50 pages):
+         sequential index ≈ 56 s code + 59 s notes + 5 s jira + 44 s wiki
+         → 2668 chunks, resolves=26, mentions≈148
+```
+
 ## When to re-record
 
 After extractor, Surreal persist, or linker changes that could move cold throughput by &gt;10%.
+After embedding provider / chunking changes that move vector build time by &gt;10%.

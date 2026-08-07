@@ -21,7 +21,8 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 | P | Ítem | Notas | Estado |
 |---|------|-------|--------|
 | P1 | Filtro MCP por `source_kinds` | `list_sources` / search / explore / semantic | ✅ |
-| P2 | Dogfood Notion live | Requiere `NOTION_TOKEN` + páginas compartidas con la integración | pendiente (sin token local) |
+| P2 | Dogfood Notion live | Requiere `NOTION_TOKEN` + páginas compartidas con la integración | ✅ (auth fix) |
+| P1 | Embeddings dogfood `fastembed` | Métricas en `docs/BENCH.md`; `index --force` + auto-force si `chunk` vacío | ✅ |
 | P2 | Tag / release GitHub `v1.1.0` | Tag `v1.1.0` pushed (CI arma binarios) | ✅ tag |
 | P2 | Recurso MCP `codebrain://schema` | Leyenda nodos/aristas | ✅ |
 
@@ -38,9 +39,10 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 
 ### Calidad de índice
 
-- [ ] Embeddings dogfood con `fastembed` en monorepo real + métricas en `docs/BENCH.md`
+- [x] Embeddings dogfood con `fastembed` en monorepo real + métricas en `docs/BENCH.md`
 - [ ] Acercar cold index sintético 1k/2k al stretch &lt;30s (hoy ~57s en M5)
 - [x] Contar `resolves`/`references` solo en aristas **nuevas**
+- [x] `codebrain index --force` (+ auto-force cuando `chunk` está vacío con embeddings on)
 
 ### Conectores
 

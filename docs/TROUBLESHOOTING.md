@@ -44,6 +44,12 @@
 
 ## Performance
 
-- First `fastembed` index downloads the model (lazy).
+- First `fastembed` index downloads the model (lazy). Prefetch with
+  `huggingface_hub.snapshot_download('Qdrant/all-MiniLM-L6-v2-onnx')` into
+  `$FASTEMBED_CACHE_DIR` / `$HF_HOME` if the Rust client fails to retrieve `model.onnx`.
+- After switching `embeddings.provider` from `none`, use `codebrain index --force`
+  (or plain `index` when `chunk` is still empty — auto-force).
+- If SurrealKV errors on chunk/index ops after enabling vectors on an old store,
+  point `database.path` at a fresh directory and re-index.
 - Large monorepos: tighten `languages` / `exclude`, index one `--source` at a time.
 - See [`BENCH.md`](./BENCH.md) for measuring index throughput.

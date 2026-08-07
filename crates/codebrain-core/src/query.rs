@@ -305,10 +305,10 @@ mod tests {
             ..Config::default()
         };
 
-        index_configured_sources(&db, &config, Some("code"))
+        index_configured_sources(&db, &config, Some("code"), false)
             .await
             .expect("index code");
-        index_configured_sources(&db, &config, Some("notes"))
+        index_configured_sources(&db, &config, Some("notes"), false)
             .await
             .expect("index notes");
         db

@@ -86,27 +86,31 @@ pub async fn ensure_chunk_vector_index(db: &Database, dimension: u32) -> Result<
     Ok(())
 }
 
-/// Replace every chunk belonging to a parent atomically.
+/// Replace every chunk belonging to a parent.
+///
+/// Uses delete + individual creates instead of one giant Surreal transaction: binding
+/// dozens of 384-d float vectors inside `BEGIN…COMMIT` regularly aborts on SurrealKV.
 pub async fn replace_chunks(db: &Database, parent: &str, chunks: &[StoredChunk]) -> Result<usize> {
-    db.query(
-        "
-        BEGIN TRANSACTION;
-        DELETE chunk WHERE parent = $parent;
-        FOR $chunk IN $chunks {
-            CREATE type::thing('chunk', $chunk.id) SET
-                parent = $chunk.parent,
-                ordinal = $chunk.ordinal,
-                text = $chunk.text,
-                embedding = $chunk.embedding;
-        };
-        COMMIT TRANSACTION;
-        ",
-    )
-    .bind(("parent", parent.to_string()))
-    .bind(("chunks", chunks.to_vec()))
-    .await?
-    .check()
-    .map_err(|error| DbError::Message(format!("replace chunks failed: {error}")))?;
+    delete_chunks_for_parent(db, parent).await?;
+    for chunk in chunks {
+        db.query(
+            "
+            CREATE type::thing('chunk', $id) SET
+                parent = $parent,
+                ordinal = $ordinal,
+                text = $text,
+                embedding = $embedding;
+            ",
+        )
+        .bind(("id", chunk.id.clone()))
+        .bind(("parent", chunk.parent.clone()))
+        .bind(("ordinal", chunk.ordinal))
+        .bind(("text", chunk.text.clone()))
+        .bind(("embedding", chunk.embedding.clone()))
+        .await?
+        .check()
+        .map_err(|error| DbError::Message(format!("create chunk failed: {error}")))?;
+    }
     Ok(chunks.len())
 }
 

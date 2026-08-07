@@ -431,7 +431,7 @@ mod tests {
 
         // Index with embeddings by calling the public indexer helpers after a normal index,
         // then embedding the persisted documents through a second pass in this test.
-        index_configured_sources(&db, &config, None)
+        index_configured_sources(&db, &config, None, false)
             .await
             .expect("index");
 

@@ -112,6 +112,9 @@ pub async fn delete_code_file(db: &Database, source_name: &str, path: &str) -> R
         DELETE calls WHERE in IN $symbols OR out IN $symbols;
         DELETE imports WHERE in = $file_record OR out = $file_record;
         DELETE defines WHERE in = $file_record;
+        DELETE resolves WHERE in IN $symbols OR out IN $symbols;
+        DELETE mentions WHERE in IN $symbols OR out IN $symbols;
+        DELETE explains WHERE in IN $symbols OR out IN $symbols;
         DELETE contains WHERE out = $file_record;
         DELETE symbol WHERE file = $file_record;
         DELETE $file_record;
@@ -195,6 +198,9 @@ pub async fn persist_code_batch(
             DELETE calls WHERE in IN $old_symbols OR out IN $old_symbols;
             DELETE imports WHERE in = $file_record OR out = $file_record;
             DELETE defines WHERE in = $file_record;
+            DELETE resolves WHERE in IN $old_symbols OR out IN $old_symbols;
+            DELETE mentions WHERE in IN $old_symbols OR out IN $old_symbols;
+            DELETE explains WHERE in IN $old_symbols OR out IN $old_symbols;
             DELETE symbol WHERE file = $file_record;
             DELETE contains WHERE in = $source_record AND out = $file_record;
 

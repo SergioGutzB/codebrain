@@ -15,11 +15,16 @@ All notable changes to CodeBrain are documented here. Format inspired by [Keep a
 - MCP `source_kinds` filter on `list_sources` / `search_symbols` / `explore_context` / `semantic_search`
 - MCP resource `codebrain://schema` (node/edge legend for agents)
 - Search excerpts highlight the matched query with `**…**` (documents + semantic chunks)
+- `codebrain index --force` (and auto-force when embeddings are on but `chunk` is empty)
 - Docs: `docs/JIRA.md`, `docs/CONFLUENCE.md`, `docs/NOTION.md`, `docs/KNOWLEDGE_GRAPH.md`, `docs/BACKLOG.md`
 
 ### Changed
 
 - `resolves` / document `references` linkers only report **new** edges (idempotent reindex)
+- Chunk replace no longer wraps large embedding vectors in one Surreal transaction
+- Code file reindex deletes `resolves` / `mentions` / `explains` before replacing symbols
+- Notion auth no longer falls back to `JIRA_API_TOKEN`
+- `docs/BENCH.md`: fastembed dogfood numbers on real monorepo + vault
 
 ## [1.0.0] — 2026-08-05
 

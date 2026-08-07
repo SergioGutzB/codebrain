@@ -46,6 +46,9 @@ enum Commands {
         /// Limit indexing to a single named source from config
         #[arg(long)]
         source: Option<String>,
+        /// Reindex everything even when content hashes match (needed after enabling embeddings)
+        #[arg(long)]
+        force: bool,
     },
     /// Start the MCP server on stdio (for Cursor / Claude Code)
     Serve,
@@ -63,7 +66,9 @@ async fn main() -> anyhow::Result<()> {
         Commands::Init { force_config } => cmd_init(&config_path, force_config).await?,
         Commands::Doctor { migrate } => cmd_doctor(&config_path, migrate).await?,
         Commands::Status => cmd_status(&config_path).await?,
-        Commands::Index { source } => cmd_index(&config_path, source.as_deref()).await?,
+        Commands::Index { source, force } => {
+            cmd_index(&config_path, source.as_deref(), force).await?
+        }
         Commands::Serve => {
             let config = load_config_or_default(&config_path)?;
             codebrain_mcp::serve(&config).await?;
@@ -166,11 +171,15 @@ async fn cmd_status(config_path: &std::path::Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn cmd_index(config_path: &std::path::Path, source: Option<&str>) -> anyhow::Result<()> {
+async fn cmd_index(
+    config_path: &std::path::Path,
+    source: Option<&str>,
+    force: bool,
+) -> anyhow::Result<()> {
     let config = load_config_or_default(config_path)?;
     let db = open_embedded(config.database.resolved_path()).await?;
     apply_schema(&db).await?;
-    let report = index_configured_sources(&db, &config, source).await?;
+    let report = index_configured_sources(&db, &config, source, force).await?;
 
     for source in &report.sources {
         println!(

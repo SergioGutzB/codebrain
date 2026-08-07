@@ -65,5 +65,7 @@ Non-loopback binds are refused unless `allow_remote = true` (see [`SECURITY.md`]
 1. Rebuild / replace the binary.
 2. Run `codebrain doctor --migrate` (schema DEFINEs are idempotent on `v1`).
 3. Re-run `codebrain index` if the release notes mention extractor or embedding changes.
+   After enabling `embeddings.provider = fastembed` on an existing DB, use `codebrain index --force`
+   (or plain `index` when the chunk table is still empty — CodeBrain auto-forces in that case).
 
 Schema policy: [`SCHEMA.md`](./SCHEMA.md).

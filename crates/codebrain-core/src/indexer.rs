@@ -14,8 +14,8 @@ use codebrain_connector_saas::{
     ConfluenceConnector, JiraConnector, NotionConnector, find_issue_keys,
 };
 use codebrain_db::{
-    Database, NodeAddress, NodeKind, delete_code_file, delete_document, existing_document_hashes,
-    existing_file_hashes, find_symbol_fqn, list_documents_for_resolution,
+    Database, NodeAddress, NodeKind, count_table, delete_code_file, delete_document,
+    existing_document_hashes, existing_file_hashes, find_symbol_fqn, list_documents_for_resolution,
     list_symbol_fqns_for_file, list_symbols_for_mentions, persist_code_batch,
     persist_document_batch, promote_mention, relate_call, relate_cross_reference, relate_import,
     relate_mention, relate_reference, relate_resolves, resolve_wikilink, upsert_code_source,
@@ -71,6 +71,7 @@ pub async fn index_configured_sources(
     db: &Database,
     config: &Config,
     source_filter: Option<&str>,
+    force: bool,
 ) -> anyhow::Result<IndexReport> {
     let mut selected: Vec<_> = config
         .sources
@@ -99,33 +100,47 @@ pub async fn index_configured_sources(
         .await
         .context("prepare embedding store")?;
 
+    // Enabling embeddings after a graph-only index leaves content hashes unchanged and
+    // would otherwise skip every file — force a full pass when the chunk table is empty.
+    let mut force = force;
+    if !force && embedder.enabled() {
+        let chunks = count_table(db, "chunk").await.unwrap_or(0);
+        if chunks == 0 {
+            tracing::info!(
+                "embeddings enabled with empty chunk table; forcing full reindex to build vectors"
+            );
+            force = true;
+        }
+    }
+
     let mut report = IndexReport::default();
     for (name, source) in selected {
         match source.kind {
             SourceKindConfig::GitRepo => {
-                report
-                    .sources
-                    .push(index_code_source(db, config, name, source, &embedder, None).await?);
+                report.sources.push(
+                    index_code_source(db, config, name, source, &embedder, None, force).await?,
+                );
             }
             SourceKindConfig::ObsidianVault => {
-                report
-                    .sources
-                    .push(index_obsidian_source(db, config, name, source, &embedder, None).await?);
+                report.sources.push(
+                    index_obsidian_source(db, config, name, source, &embedder, None, force).await?,
+                );
             }
             SourceKindConfig::Jira => {
-                report
-                    .sources
-                    .push(index_jira_source(db, config, name, source, &embedder, None).await?);
+                report.sources.push(
+                    index_jira_source(db, config, name, source, &embedder, None, force).await?,
+                );
             }
             SourceKindConfig::Confluence => {
                 report.sources.push(
-                    index_confluence_source(db, config, name, source, &embedder, None).await?,
+                    index_confluence_source(db, config, name, source, &embedder, None, force)
+                        .await?,
                 );
             }
             SourceKindConfig::Notion => {
-                report
-                    .sources
-                    .push(index_notion_source(db, config, name, source, &embedder, None).await?);
+                report.sources.push(
+                    index_notion_source(db, config, name, source, &embedder, None, force).await?,
+                );
             }
         }
     }
@@ -175,19 +190,64 @@ pub async fn reindex_source_paths(
 
     match source.kind {
         SourceKindConfig::GitRepo => {
-            index_code_source(db, config, source_name, source, &embedder, Some(&paths)).await
+            index_code_source(
+                db,
+                config,
+                source_name,
+                source,
+                &embedder,
+                Some(&paths),
+                false,
+            )
+            .await
         }
         SourceKindConfig::ObsidianVault => {
-            index_obsidian_source(db, config, source_name, source, &embedder, Some(&paths)).await
+            index_obsidian_source(
+                db,
+                config,
+                source_name,
+                source,
+                &embedder,
+                Some(&paths),
+                false,
+            )
+            .await
         }
         SourceKindConfig::Jira => {
-            index_jira_source(db, config, source_name, source, &embedder, Some(&paths)).await
+            index_jira_source(
+                db,
+                config,
+                source_name,
+                source,
+                &embedder,
+                Some(&paths),
+                false,
+            )
+            .await
         }
         SourceKindConfig::Confluence => {
-            index_confluence_source(db, config, source_name, source, &embedder, Some(&paths)).await
+            index_confluence_source(
+                db,
+                config,
+                source_name,
+                source,
+                &embedder,
+                Some(&paths),
+                false,
+            )
+            .await
         }
         SourceKindConfig::Notion => {
-            index_notion_source(db, config, source_name, source, &embedder, Some(&paths)).await
+            index_notion_source(
+                db,
+                config,
+                source_name,
+                source,
+                &embedder,
+                Some(&paths),
+                false,
+            )
+            .await
         }
     }
 }
@@ -207,6 +267,7 @@ async fn index_code_source(
     source: &SourceConfig,
     embedder: &Arc<dyn Embedder>,
     only_paths: Option<&[String]>,
+    force: bool,
 ) -> anyhow::Result<SourceIndexReport> {
     let root = source.resolved_path();
     let languages = configured_languages(source)?;
@@ -231,7 +292,7 @@ async fn index_code_source(
                     .with_context(|| format!("stat {relative}"))?;
                 discovered_paths.insert(relative.clone());
                 let hash = item.content_hash.as_deref();
-                if existing.get(relative).map(String::as_str) != hash {
+                if force || existing.get(relative).map(String::as_str) != hash {
                     changed.push(item);
                 }
             } else if existing.contains_key(relative) {
@@ -254,7 +315,7 @@ async fn index_code_source(
             .into_iter()
             .filter(|item| {
                 let hash = item.content_hash.as_deref();
-                existing.get(&item.id).map(String::as_str) != hash
+                force || existing.get(&item.id).map(String::as_str) != hash
             })
             .collect();
         (discovered_paths, changed, removed)
@@ -359,6 +420,7 @@ async fn index_obsidian_source(
     source: &SourceConfig,
     embedder: &Arc<dyn Embedder>,
     only_paths: Option<&[String]>,
+    force: bool,
 ) -> anyhow::Result<SourceIndexReport> {
     let root = source.resolved_path();
     let connector = Arc::new(ObsidianConnector::new(name));
@@ -382,7 +444,7 @@ async fn index_obsidian_source(
                     .with_context(|| format!("stat {relative}"))?;
                 discovered_paths.insert(relative.clone());
                 let hash = item.content_hash.as_deref();
-                if existing.get(relative).map(String::as_str) != hash {
+                if force || existing.get(relative).map(String::as_str) != hash {
                     changed.push(item);
                 }
             } else if existing.contains_key(relative) {
@@ -405,7 +467,7 @@ async fn index_obsidian_source(
             .into_iter()
             .filter(|item| {
                 let hash = item.content_hash.as_deref();
-                existing.get(&item.id).map(String::as_str) != hash
+                force || existing.get(&item.id).map(String::as_str) != hash
             })
             .collect();
         (discovered_paths, changed, removed)
@@ -542,6 +604,7 @@ async fn index_jira_source(
     source: &SourceConfig,
     embedder: &Arc<dyn Embedder>,
     only_paths: Option<&[String]>,
+    force: bool,
 ) -> anyhow::Result<SourceIndexReport> {
     let auth = source.jira_auth()?;
     let jql = source.jql.clone().unwrap_or_else(|| {
@@ -573,7 +636,7 @@ async fn index_jira_source(
         for key in paths {
             if let Some(item) = items.iter().find(|item| &item.id == key) {
                 let hash = item.content_hash.as_deref();
-                if existing.get(key).map(String::as_str) != hash {
+                if force || existing.get(key).map(String::as_str) != hash {
                     changed.push(item.clone());
                 }
             } else if existing.contains_key(key) {
@@ -591,7 +654,7 @@ async fn index_jira_source(
             .into_iter()
             .filter(|item| {
                 let hash = item.content_hash.as_deref();
-                existing.get(&item.id).map(String::as_str) != hash
+                force || existing.get(&item.id).map(String::as_str) != hash
             })
             .collect();
         (changed, removed)
@@ -642,6 +705,7 @@ async fn index_confluence_source(
     source: &SourceConfig,
     embedder: &Arc<dyn Embedder>,
     only_paths: Option<&[String]>,
+    force: bool,
 ) -> anyhow::Result<SourceIndexReport> {
     let auth = source.atlassian_auth()?;
     let cql = source.confluence_cql();
@@ -671,7 +735,7 @@ async fn index_confluence_source(
         for key in paths {
             if let Some(item) = items.iter().find(|item| &item.id == key) {
                 let hash = item.content_hash.as_deref();
-                if existing.get(key).map(String::as_str) != hash {
+                if force || existing.get(key).map(String::as_str) != hash {
                     changed.push(item.clone());
                 }
             } else if existing.contains_key(key) {
@@ -689,7 +753,7 @@ async fn index_confluence_source(
             .into_iter()
             .filter(|item| {
                 let hash = item.content_hash.as_deref();
-                existing.get(&item.id).map(String::as_str) != hash
+                force || existing.get(&item.id).map(String::as_str) != hash
             })
             .collect();
         (changed, removed)
@@ -789,6 +853,7 @@ async fn index_notion_source(
     source: &SourceConfig,
     embedder: &Arc<dyn Embedder>,
     only_paths: Option<&[String]>,
+    force: bool,
 ) -> anyhow::Result<SourceIndexReport> {
     let auth = source.notion_auth()?;
     let query = source.notion_query();
@@ -813,7 +878,7 @@ async fn index_notion_source(
         for key in paths {
             if let Some(item) = items.iter().find(|item| &item.id == key) {
                 let hash = item.content_hash.as_deref();
-                if existing.get(key).map(String::as_str) != hash {
+                if force || existing.get(key).map(String::as_str) != hash {
                     changed.push(item.clone());
                 }
             } else if existing.contains_key(key) {
@@ -831,7 +896,7 @@ async fn index_notion_source(
             .into_iter()
             .filter(|item| {
                 let hash = item.content_hash.as_deref();
-                existing.get(&item.id).map(String::as_str) != hash
+                force || existing.get(&item.id).map(String::as_str) != hash
             })
             .collect();
         (changed, removed)
@@ -1314,10 +1379,10 @@ mod tests {
             ..Config::default()
         };
 
-        let first = index_configured_sources(&db, &config, Some("fixture"))
+        let first = index_configured_sources(&db, &config, Some("fixture"), false)
             .await
             .expect("first index");
-        let second = index_configured_sources(&db, &config, Some("fixture"))
+        let second = index_configured_sources(&db, &config, Some("fixture"), false)
             .await
             .expect("second index");
 
@@ -1328,6 +1393,12 @@ mod tests {
         assert_eq!(second.indexed(), 0);
         assert_eq!(second.skipped(), 8);
         assert!(count(&db, "imports").await >= 3);
+
+        let forced = index_configured_sources(&db, &config, Some("fixture"), true)
+            .await
+            .expect("forced index");
+        assert_eq!(forced.indexed(), 8);
+        assert_eq!(forced.skipped(), 0);
     }
 
     #[tokio::test]
@@ -1372,10 +1443,10 @@ mod tests {
             ..Config::default()
         };
 
-        index_configured_sources(&db, &config, Some("code"))
+        index_configured_sources(&db, &config, Some("code"), false)
             .await
             .expect("index code");
-        let vault_report = index_configured_sources(&db, &config, Some("notes"))
+        let vault_report = index_configured_sources(&db, &config, Some("notes"), false)
             .await
             .expect("index vault");
 
@@ -1387,7 +1458,7 @@ mod tests {
         assert!(count(&db, "references").await >= 1);
         assert!(count(&db, "mentions").await >= 1);
 
-        let second = index_configured_sources(&db, &config, Some("notes"))
+        let second = index_configured_sources(&db, &config, Some("notes"), false)
             .await
             .expect("second vault index");
         assert_eq!(second.indexed(), 0);
@@ -1421,7 +1492,7 @@ mod tests {
             ..Config::default()
         };
 
-        index_configured_sources(&db, &config, Some("notes"))
+        index_configured_sources(&db, &config, Some("notes"), false)
             .await
             .expect("full vault index");
 

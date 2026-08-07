@@ -375,4 +375,4 @@ Después       → Fase 7 bajo demanda
 
 ## Próximo paso sugerido
 
-**Próximo paso sugerido:** exportar `NOTION_TOKEN` para dogfood Notion, o pedir el **primer commit** / release `v1.1.0` (el repo aún no tiene commits). Ver [`docs/BACKLOG.md`](./docs/BACKLOG.md).
+**Próximo paso sugerido:** dogfood Notion (`NOTION_TOKEN`), embeddings `fastembed`, o esperar binarios del workflow `release` en el tag `v1.1.0`.

@@ -22,7 +22,7 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 |---|------|-------|--------|
 | P1 | Filtro MCP por `source_kinds` | `list_sources` / search / explore / semantic | ✅ |
 | P2 | Dogfood Notion live | Requiere `NOTION_TOKEN` + páginas compartidas con la integración | pendiente (sin token local) |
-| P2 | Tag / release GitHub `v1.1.0` | Tras push de polish excerpts | 🔄 |
+| P2 | Tag / release GitHub `v1.1.0` | Tag `v1.1.0` pushed (CI arma binarios) | ✅ tag |
 | P2 | Recurso MCP `codebrain://schema` | Leyenda nodos/aristas | ✅ |
 
 ---

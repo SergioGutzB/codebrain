@@ -7,6 +7,7 @@ mod confluence_client;
 mod error;
 mod html;
 mod jira;
+mod jira_cursor;
 mod keys;
 mod notion;
 mod notion_client;
@@ -20,6 +21,9 @@ pub use confluence_client::{
 };
 pub use error::{Result, SaasError};
 pub use jira::JiraConnector;
+pub use jira_cursor::{
+    jira_jql_with_updated_cursor, jira_updated_cursor_key, max_jira_updated, parse_jira_updated,
+};
 pub use keys::find_issue_keys;
 pub use notion::NotionConnector;
 pub use notion_client::{

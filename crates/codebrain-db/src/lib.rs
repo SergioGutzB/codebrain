@@ -7,6 +7,7 @@ mod documents;
 mod error;
 mod graph;
 mod ids;
+mod meta;
 mod migrate;
 mod queries;
 mod resolve;
@@ -32,6 +33,7 @@ pub use graph::{
     PersistedBatch, delete_code_file, existing_file_hashes, file_content_hash, find_symbol_fqn,
     list_symbol_fqns_for_file, persist_code_batch, relate_call, relate_import, upsert_code_source,
 };
+pub use meta::{delete_meta, read_meta, write_meta};
 pub use migrate::{SCHEMA_VERSION, apply_schema, current_schema_version};
 pub use queries::{
     Direction, DocumentHit, NeighborEdge, NodeAddress, NodeKind, SourceSummary, SymbolHit,

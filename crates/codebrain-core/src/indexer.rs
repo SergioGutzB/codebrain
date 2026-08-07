@@ -12,14 +12,16 @@ use codebrain_connector_code::{CodeConnector, Language};
 use codebrain_connector_obsidian::ObsidianConnector;
 use codebrain_connector_saas::{
     ConfluenceConnector, JiraConnector, NotionConnector, find_issue_keys,
+    jira_jql_with_updated_cursor, jira_updated_cursor_key, max_jira_updated, parse_jira_updated,
 };
 use codebrain_db::{
-    Database, NodeAddress, NodeKind, count_table, delete_code_file, delete_document,
+    Database, NodeAddress, NodeKind, count_table, delete_code_file, delete_document, delete_meta,
     existing_document_hashes, existing_file_hashes, find_symbol_fqn, list_documents_for_resolution,
     list_symbol_fqns_for_file, list_symbols_for_mentions, persist_code_batch,
-    persist_document_batch, promote_mention, relate_call, relate_cross_reference, relate_import,
-    relate_mention, relate_reference, relate_resolves, resolve_wikilink, upsert_code_source,
-    upsert_confluence_source, upsert_jira_source, upsert_notion_source, upsert_obsidian_source,
+    persist_document_batch, promote_mention, read_meta, relate_call, relate_cross_reference,
+    relate_import, relate_mention, relate_reference, relate_resolves, resolve_wikilink,
+    upsert_code_source, upsert_confluence_source, upsert_jira_source, upsert_notion_source,
+    upsert_obsidian_source, write_meta,
 };
 use serde::Serialize;
 use tokio::task::JoinSet;
@@ -607,9 +609,26 @@ async fn index_jira_source(
     force: bool,
 ) -> anyhow::Result<SourceIndexReport> {
     let auth = source.jira_auth()?;
-    let jql = source.jql.clone().unwrap_or_else(|| {
+    let base_jql = source.jql.clone().unwrap_or_else(|| {
         "assignee = currentUser() AND updated >= -30d ORDER BY updated DESC".into()
     });
+    let cursor_key = jira_updated_cursor_key(name);
+    let stored_cursor = if force {
+        None
+    } else {
+        match read_meta(db, &cursor_key).await? {
+            Some(raw) => parse_jira_updated(&raw),
+            None => None,
+        }
+    };
+    // Full sync (no cursor / --force) may prune issues absent from the page.
+    // Incremental pages are a delta — never delete tickets just because they were not returned.
+    let allow_removals = only_paths.is_none() && (force || stored_cursor.is_none());
+    let jql = jira_jql_with_updated_cursor(&base_jql, stored_cursor.as_ref());
+    if stored_cursor.is_some() {
+        tracing::info!(source = name, %jql, "jira incremental sync");
+    }
+
     let connector = Arc::new(JiraConnector::new(
         name,
         auth.clone(),
@@ -645,11 +664,15 @@ async fn index_jira_source(
         }
         (changed, removed)
     } else {
-        let removed: Vec<_> = existing
-            .keys()
-            .filter(|path| !discovered_paths.contains(path.as_str()))
-            .cloned()
-            .collect();
+        let removed: Vec<_> = if allow_removals {
+            existing
+                .keys()
+                .filter(|path| !discovered_paths.contains(path.as_str()))
+                .cloned()
+                .collect()
+        } else {
+            Vec::new()
+        };
         let changed: Vec<_> = items
             .into_iter()
             .filter(|item| {
@@ -683,16 +706,24 @@ async fn index_jira_source(
         remove_document_chunks(db, name, path).await?;
         delete_document(db, name, path).await?;
     }
-    if changed.is_empty() {
-        return Ok(report);
+
+    if !changed.is_empty() {
+        let batches = extract_bounded(connector.clone(), changed, config.index.batch_size).await?;
+        for chunk in batches.chunks(config.index.batch_size.max(1)) {
+            let merged = merge_extract_batches(chunk);
+            let persisted = persist_document_batch(db, name, &auth.base_url, &merged).await?;
+            report.documents += persisted.documents;
+            report.chunks += embed_extract_batch(db, name, &merged, embedder).await?;
+        }
     }
 
-    let batches = extract_bounded(connector, changed, config.index.batch_size).await?;
-    for chunk in batches.chunks(config.index.batch_size.max(1)) {
-        let merged = merge_extract_batches(chunk);
-        let persisted = persist_document_batch(db, name, &auth.base_url, &merged).await?;
-        report.documents += persisted.documents;
-        report.chunks += embed_extract_batch(db, name, &merged, embedder).await?;
+    // Advance high-water mark from whatever the API returned (even if all hashes matched).
+    let cached = connector.cached_issues().await;
+    if let Some(max_updated) = max_jira_updated(cached.iter().map(|issue| issue.updated.as_str())) {
+        write_meta(db, &cursor_key, &max_updated.to_rfc3339()).await?;
+    } else if force {
+        // Explicit full refresh that returned nothing — drop a stale cursor.
+        delete_meta(db, &cursor_key).await?;
     }
 
     Ok(report)

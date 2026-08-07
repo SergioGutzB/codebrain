@@ -16,6 +16,8 @@ All notable changes to CodeBrain are documented here. Format inspired by [Keep a
 - MCP resource `codebrain://schema` (node/edge legend for agents)
 - Search excerpts highlight the matched query with `**…**` (documents + semantic chunks)
 - `codebrain index --force` (and auto-force when embeddings are on but `chunk` is empty)
+- Jira incremental sync via persisted `updated` cursor (`jira.<source>.updated_cursor`)
+- One-day setup guide: `docs/SETUP_DAY.md`
 - Docs: `docs/JIRA.md`, `docs/CONFLUENCE.md`, `docs/NOTION.md`, `docs/KNOWLEDGE_GRAPH.md`, `docs/BACKLOG.md`
 
 ### Changed

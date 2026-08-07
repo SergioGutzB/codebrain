@@ -5,6 +5,8 @@ Complementa el plan de fases (`PLAN-IMPLEMENTACION.md`) y los docs por conector.
 
 ## Cómo se usa (flujo mínimo)
 
+Camino de un día (local → MCP → embeddings → SaaS): [`SETUP_DAY.md`](./SETUP_DAY.md).
+
 ```bash
 # 1. Configurar fuentes (git / Obsidian / Jira / Confluence / Notion)
 cp codebrain.example.toml codebrain.toml
@@ -33,7 +35,7 @@ cargo build -p codebrain-cli --release
 | Registrar ADR | `add_architectural_decision` |
 | Fortalecer mención nota→código | `promote_mention` |
 
-Docs de instalación/seguridad/conectores: [`INSTALL`](./INSTALL.md) · [`MCP`](./MCP.md) · [`JIRA`](./JIRA.md) · [`CONFLUENCE`](./CONFLUENCE.md) · [`NOTION`](./NOTION.md) · [`BACKLOG`](./BACKLOG.md).
+Docs de instalación/seguridad/conectores: [`SETUP_DAY`](./SETUP_DAY.md) · [`INSTALL`](./INSTALL.md) · [`MCP`](./MCP.md) · [`JIRA`](./JIRA.md) · [`CONFLUENCE`](./CONFLUENCE.md) · [`NOTION`](./NOTION.md) · [`BACKLOG`](./BACKLOG.md).
 
 ---
 

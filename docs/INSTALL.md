@@ -20,6 +20,8 @@ Optional: copy it onto your `PATH`.
 
 ## First-time setup
 
+Camino guiado de un día (recomendado): [`SETUP_DAY.md`](./SETUP_DAY.md).
+
 ```bash
 # Creates config template + applies schema
 ./target/release/codebrain init --config ./codebrain.toml

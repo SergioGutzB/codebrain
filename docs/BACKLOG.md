@@ -23,6 +23,8 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 | P1 | Filtro MCP por `source_kinds` | `list_sources` / search / explore / semantic | ✅ |
 | P2 | Dogfood Notion live | Requiere `NOTION_TOKEN` + páginas compartidas con la integración | ✅ (auth fix) |
 | P1 | Embeddings dogfood `fastembed` | Métricas en `docs/BENCH.md`; `index --force` + auto-force si `chunk` vacío | ✅ |
+| P1 | Jira `updated` cursor | Meta `jira.<source>.updated_cursor`; incremental JQL; `--force` full | ✅ |
+| P2 | Guía “un día de setup” | `docs/SETUP_DAY.md` → INSTALL + KNOWLEDGE_GRAPH + MCP | ✅ |
 | P2 | Tag / release GitHub `v1.1.0` | Tag `v1.1.0` pushed (CI arma binarios) | ✅ tag |
 | P2 | Recurso MCP `codebrain://schema` | Leyenda nodos/aristas | ✅ |
 
@@ -46,7 +48,7 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 
 ### Conectores
 
-- [ ] Jira: sync por `updated` cursor persistido (menos re-fetch)
+- [x] Jira: sync por `updated` cursor persistido (menos re-fetch)
 - [ ] Confluence: más espacios / CQL presets en example
 - [ ] Notion: databases → filas como documentos (hoy solo pages)
 - [ ] Write-back opt-in a Jira/Notion/Confluence (**fuera** de v1.1 lectura)
@@ -55,7 +57,7 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 
 - [ ] Primer commit + remote + CI verde en repo limpio
 - [ ] `codebrain init` genera example con stubs SaaS comentados (ya en example.toml)
-- [ ] Guía corta “un día de setup” enlazando KNOWLEDGE_GRAPH + INSTALL
+- [x] Guía corta “un día de setup” enlazando KNOWLEDGE_GRAPH + INSTALL (`docs/SETUP_DAY.md`)
 
 ### Fuera de alcance cercano
 

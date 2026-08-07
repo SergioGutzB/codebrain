@@ -21,6 +21,8 @@ Canonical instructions for Cursor / Claude Code / OpenCode / others:
 
 ## Quick start
 
+Guía paso a paso de un día (local → MCP → embeddings → SaaS): [`docs/SETUP_DAY.md`](./docs/SETUP_DAY.md).
+
 ```bash
 # Compilar
 cargo build -p codebrain-cli --release
@@ -83,7 +85,7 @@ Configuración de cliente, tools disponibles y formato de tokens de nodo: [`docs
 
 - [Documento de Arquitectura](./Documento%20de%20Arquitectura-%20Ecosistema%20Global%20de%20Conocimiento%20Omnicanal%20(CodeBrain%20v2.0).md)
 - [Plan de implementación](./PLAN-IMPLEMENTACION.md)
-- [Instalación](./docs/INSTALL.md)
+- [Un día de setup](./docs/SETUP_DAY.md) · [Instalación](./docs/INSTALL.md)
 - [Integración MCP](./docs/MCP.md)
 - [Seguridad](./docs/SECURITY.md)
 - [Troubleshooting](./docs/TROUBLESHOOTING.md)
@@ -94,7 +96,3 @@ Configuración de cliente, tools disponibles y formato de tokens de nodo: [`docs
 ## Licencia
 
 MIT
-# codebrain
-# codebrain
-# codebrain
-# codebrain

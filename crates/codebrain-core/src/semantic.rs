@@ -5,8 +5,8 @@ use std::sync::Arc;
 use codebrain_connector::{DocumentNode, ExtractBatch, SymbolNode};
 use codebrain_db::{
     ChunkHit, Database, NodeAddress, StoredChunk, chunk_record_id, delete_chunks_for_parent,
-    ensure_chunk_vector_index, fts_chunks, knn_chunks, record_embedding_meta, replace_chunks,
-    search_documents, search_symbols,
+    ensure_chunk_vector_index, fts_chunks, highlight_excerpt, knn_chunks, record_embedding_meta,
+    replace_chunks, search_documents, search_symbols,
 };
 use codebrain_embed::{ChunkDraft, Embedder, chunk_document, chunk_symbol};
 use serde::{Deserialize, Serialize};
@@ -214,7 +214,7 @@ pub async fn semantic_search(
                 score: vector_score.unwrap_or(0.0) * weights.vector,
                 vector_score,
                 fts_score: None,
-                excerpt: truncate(&hit.text, 240),
+                excerpt: highlight_excerpt(&hit.text, query),
                 ordinal: hit.ordinal,
             });
         }
@@ -230,7 +230,7 @@ pub async fn semantic_search(
                 })
             })
             .collect();
-        merge_fts(&mut hits, &fts, weights.fts);
+        merge_fts(&mut hits, &fts, weights.fts, query);
     } else {
         mode = "fts".to_string();
         // Prefer symbol/document FTS, then chunk text substring.
@@ -266,7 +266,7 @@ pub async fn semantic_search(
                 })
             })
             .collect();
-        merge_fts(&mut hits, &fts, weights.fts);
+        merge_fts(&mut hits, &fts, weights.fts, query);
     }
 
     hits.sort_by(|left, right| {
@@ -313,7 +313,7 @@ pub async fn semantic_search(
     })
 }
 
-fn merge_fts(hits: &mut Vec<SemanticHit>, fts: &[ChunkHit], weight: f32) {
+fn merge_fts(hits: &mut Vec<SemanticHit>, fts: &[ChunkHit], weight: f32, query: &str) {
     for hit in fts {
         if let Some(existing) = hits
             .iter_mut()
@@ -321,13 +321,16 @@ fn merge_fts(hits: &mut Vec<SemanticHit>, fts: &[ChunkHit], weight: f32) {
         {
             existing.fts_score = Some(weight);
             existing.score += weight;
+            if !existing.excerpt.contains("**") {
+                existing.excerpt = highlight_excerpt(&hit.text, query);
+            }
         } else {
             hits.push(SemanticHit {
                 parent: hit.parent.clone(),
                 score: weight,
                 vector_score: None,
                 fts_score: Some(weight),
-                excerpt: truncate(&hit.text, 240),
+                excerpt: highlight_excerpt(&hit.text, query),
                 ordinal: hit.ordinal,
             });
         }
@@ -337,14 +340,6 @@ fn merge_fts(hits: &mut Vec<SemanticHit>, fts: &[ChunkHit], weight: f32) {
 fn distance_to_score(distance: f32) -> f32 {
     // Cosine distance in Surreal is typically in [0, 2]; map to (0, 1].
     (1.0 / (1.0 + distance.max(0.0))).clamp(0.0, 1.0)
-}
-
-fn truncate(text: &str, max_chars: usize) -> String {
-    let mut out: String = text.chars().take(max_chars).collect();
-    if text.chars().count() > max_chars {
-        out.push('…');
-    }
-    out.replace('\n', " ")
 }
 
 #[cfg(test)]

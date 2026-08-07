@@ -255,9 +255,13 @@ pub async fn relate_resolves(
             LET $from = type::thing('symbol', $symbol_id);
             LET $to = type::thing('document', $document_id);
             IF record::exists($from) AND record::exists($to) {
-                DELETE resolves WHERE in = $from AND out = $to;
-                RELATE $from->resolves->$to;
-                RETURN true;
+                LET $existing = SELECT id FROM resolves WHERE in = $from AND out = $to LIMIT 1;
+                IF array::len($existing) = 0 {
+                    RELATE $from->resolves->$to;
+                    RETURN true;
+                } ELSE {
+                    RETURN false;
+                };
             } ELSE {
                 RETURN false;
             };
@@ -429,9 +433,13 @@ async fn relate_documents(
         LET $from = type::thing('document', $from_id);
         LET $to = type::thing('document', $to_id);
         IF record::exists($from) AND record::exists($to) {{
-            DELETE {edge} WHERE in = $from AND out = $to;
-            RELATE $from->{edge}->$to;
-            RETURN true;
+            LET $existing = SELECT id FROM {edge} WHERE in = $from AND out = $to LIMIT 1;
+            IF array::len($existing) = 0 {{
+                RELATE $from->{edge}->$to;
+                RETURN true;
+            }} ELSE {{
+                RETURN false;
+            }};
         }} ELSE {{
             RETURN false;
         }};
@@ -626,6 +634,12 @@ mod tests {
             relate_resolves(&db, "code", "Services::Plan", "tickets", "PPS-479")
                 .await
                 .expect("resolves")
+        );
+        assert!(
+            !relate_resolves(&db, "code", "Services::Plan", "tickets", "PPS-479")
+                .await
+                .expect("resolves idempotent"),
+            "second relate should not count as new"
         );
     }
 }

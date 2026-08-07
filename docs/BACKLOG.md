@@ -22,7 +22,7 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 |---|------|-------|--------|
 | P1 | Filtro MCP por `source_kinds` | `list_sources` / search / explore / semantic | ✅ |
 | P2 | Dogfood Notion live | Requiere `NOTION_TOKEN` + páginas compartidas con la integración | pendiente (sin token local) |
-| P2 | Tag / release GitHub `v1.1.0` | Necesita primer commit + remote | pendiente |
+| P2 | Tag / release GitHub `v1.1.0` | Tras push de polish excerpts | 🔄 |
 | P2 | Recurso MCP `codebrain://schema` | Leyenda nodos/aristas | ✅ |
 
 ---
@@ -34,13 +34,13 @@ Prioridad alineada con `PLAN-IMPLEMENTACION.md`. Marcar ítems al completarlos.
 - [x] Filtro MCP `source_kinds` (`git_repo` \| `obsidian_vault` \| `jira` \| `confluence` \| `notion`)
 - [x] Filtro también por **nombre** de source (mismo campo `source_kinds`)
 - [x] Recurso MCP `codebrain://schema` (leyenda nodos/aristas)
-- [ ] Mejores excerpts en `semantic_search` (highlights)
+- [x] Mejores excerpts en `semantic_search` (highlights `**match**`)
 
 ### Calidad de índice
 
 - [ ] Embeddings dogfood con `fastembed` en monorepo real + métricas en `docs/BENCH.md`
 - [ ] Acercar cold index sintético 1k/2k al stretch &lt;30s (hoy ~57s en M5)
-- [ ] Contar `resolves`/`references` solo en aristas **nuevas** (hoy re-cuentan en cada index)
+- [x] Contar `resolves`/`references` solo en aristas **nuevas**
 
 ### Conectores
 

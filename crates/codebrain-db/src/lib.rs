@@ -35,7 +35,7 @@ pub use graph::{
 pub use migrate::{SCHEMA_VERSION, apply_schema, current_schema_version};
 pub use queries::{
     Direction, DocumentHit, NeighborEdge, NodeAddress, NodeKind, SourceSummary, SymbolHit,
-    list_sources, neighbors, search_documents, search_symbols,
+    highlight_excerpt, list_sources, neighbors, search_documents, search_symbols,
 };
 pub use resolve::{DocumentLookup, list_documents_for_resolution, resolve_wikilink};
 pub use status::{DatabaseStatus, TableCount, collect_status};

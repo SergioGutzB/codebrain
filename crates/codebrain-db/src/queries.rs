@@ -467,18 +467,44 @@ async fn count_for_source(db: &Database, table: &str, source_id: &str) -> Result
 
 fn excerpt_around(body: &str, needle: &str) -> String {
     const WINDOW: usize = 160;
+    if needle.is_empty() {
+        let end = ceil_char_boundary(body, WINDOW.min(body.len()));
+        let mut excerpt = body[..end].replace('\n', " ").trim().to_string();
+        if end < body.len() {
+            excerpt.push('…');
+        }
+        return excerpt;
+    }
+
     let lowered = body.to_ascii_lowercase();
-    let start = lowered
-        .find(needle)
-        .map(|index| index.saturating_sub(WINDOW / 2))
-        .unwrap_or(0);
-    let start = floor_char_boundary(body, start);
-    let end = ceil_char_boundary(body, (start + WINDOW).min(body.len()));
-    let mut excerpt = body[start..end].replace('\n', " ").trim().to_string();
+    let Some(match_at) = lowered.find(needle) else {
+        let end = ceil_char_boundary(body, WINDOW.min(body.len()));
+        let mut excerpt = body[..end].replace('\n', " ").trim().to_string();
+        if end < body.len() {
+            excerpt.push('…');
+        }
+        return excerpt;
+    };
+
+    let match_end = match_at + needle.len();
+    let start = floor_char_boundary(body, match_at.saturating_sub(WINDOW / 2));
+    let end = ceil_char_boundary(body, (start + WINDOW).max(match_end).min(body.len()));
+    let before = body[start..match_at].replace('\n', " ");
+    let matched = body[match_at..match_end].replace('\n', " ");
+    let after = body[match_end..end].replace('\n', " ");
+    let mut excerpt = format!("{}**{}**{}", before.trim_start(), matched, after.trim_end());
+    if start > 0 {
+        excerpt = format!("…{excerpt}");
+    }
     if end < body.len() {
         excerpt.push('…');
     }
     excerpt
+}
+
+/// Public helper for semantic search / MCP excerpts with `**highlight**` around the query.
+pub fn highlight_excerpt(body: &str, needle: &str) -> String {
+    excerpt_around(body, &needle.trim().to_ascii_lowercase())
 }
 
 fn floor_char_boundary(value: &str, mut index: usize) -> usize {
@@ -514,7 +540,12 @@ mod tests {
 
     #[test]
     fn builds_excerpt_around_needle() {
-        let body = "alpha beta gamma delta";
-        assert!(excerpt_around(body, "gamma").contains("gamma"));
+        let body = "alpha beta gamma delta epsilon zeta";
+        let excerpt = excerpt_around(body, "gamma");
+        assert!(
+            excerpt.contains("**gamma**"),
+            "expected highlight: {excerpt}"
+        );
+        assert!(excerpt.contains("beta"));
     }
 }

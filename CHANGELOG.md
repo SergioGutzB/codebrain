@@ -14,7 +14,12 @@ All notable changes to CodeBrain are documented here. Format inspired by [Keep a
 - Mentions from Confluence/Notion page bodies → code symbols
 - MCP `source_kinds` filter on `list_sources` / `search_symbols` / `explore_context` / `semantic_search`
 - MCP resource `codebrain://schema` (node/edge legend for agents)
+- Search excerpts highlight the matched query with `**…**` (documents + semantic chunks)
 - Docs: `docs/JIRA.md`, `docs/CONFLUENCE.md`, `docs/NOTION.md`, `docs/KNOWLEDGE_GRAPH.md`, `docs/BACKLOG.md`
+
+### Changed
+
+- `resolves` / document `references` linkers only report **new** edges (idempotent reindex)
 
 ## [1.0.0] — 2026-08-05
 

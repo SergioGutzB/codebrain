@@ -1,0 +1,14 @@
+---
+description: CodeBrain agent contract — pre/post flow, no AI co-authors, use scripts/agent
+alwaysApply: true
+---
+
+# CodeBrain — core agent rule
+
+1. Read `AGENTS.md` at session start for non-trivial work.
+2. **Before coding:** run `./scripts/agent/preflight.sh` (or `just pre`).
+3. **After coding:** run `./scripts/agent/postcheck.sh` (or `just post`) before claiming done.
+4. Follow `docs/agent/CODING_STANDARDS.md` and `docs/agent/TESTING.md`.
+5. **Commits:** never add `Co-Authored-By` or AI attribution trailers. Use Conventional Commits (`docs/agent/COMMIT_CONVENTION.md`). Only commit when the user asks.
+6. Prefer `scripts/agent/*` over ad-hoc validation commands.
+7. Stay inside the current phase in `PLAN-IMPLEMENTACION.md`.

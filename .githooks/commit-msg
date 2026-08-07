@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Git commit-msg hook: strip injected AI co-author trailers, then validate.
+set -euo pipefail
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+MSG_FILE="${1:?commit-msg hook requires message file}"
+
+# Cursor (and similar) may append Co-authored-by trailers; CodeBrain forbids them.
+# Remove those lines in-place so the commit can proceed without --no-verify.
+if [[ -f "$MSG_FILE" ]]; then
+  tmp="$(mktemp)"
+  # Drop AI co-author / attribution trailers; keep the rest of the message.
+  grep -Eiv \
+    -e '^[[:space:]]*Co-Authored-By:[[:space:]]*(Cursor|Claude|GPT|OpenAI|Copilot|OpenCode|Anthropic|Gemini|CursorAgent)\b' \
+    -e '^[[:space:]]*(Generated-By|Assisted-By):[[:space:]]*(Cursor|Claude|GPT|OpenAI|Copilot|OpenCode|Anthropic|Gemini)\b' \
+    -e '^[[:space:]]*Signed-off-by:[[:space:]]*.*(cursoragent|cursor\.com|anthropic|openai)\b' \
+    "$MSG_FILE" >"$tmp" || true
+  # Trim trailing blank lines left after stripping trailers
+  # (portable: rewrite without trailing empty lines)
+  awk 'NF {blank=0} !NF {blank++} blank<2 {buf[n++]=$0} END {for (i=0;i<n;i++) if (!(i==n-1 && buf[i]=="")) print buf[i]}' "$tmp" >"$MSG_FILE"
+  rm -f "$tmp"
+fi
+
+exec "$REPO_ROOT/scripts/agent/check-commit-msg.sh" "$MSG_FILE"

@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Agent validate gate
+        run: ./scripts/agent/validate.sh
+
+  commit-msg-selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Accept valid message
+        run: echo "feat(db): add schema migrate" | ./scripts/agent/check-commit-msg.sh
+      - name: Reject co-author trailer
+        run: |
+          if echo -e "feat(db): x\n\nCo-Authored-By: Cursor <cursor@example.com>" | ./scripts/agent/check-commit-msg.sh; then
+            echo "expected failure" >&2
+            exit 1
+          fi
+
+  bench-micro:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Fixture index micro-bench
+        run: ./scripts/bench-index.sh

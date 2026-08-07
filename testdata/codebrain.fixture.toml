@@ -1,0 +1,28 @@
+[database]
+path = "./target/testdata/codebrain-fixture-db"
+
+[sources.fixture]
+kind = "git_repo"
+path = "./testdata/repo-mini"
+languages = ["rust", "typescript", "python", "ruby"]
+
+[sources.notes]
+kind = "obsidian_vault"
+path = "./testdata/vault-mini"
+
+[embeddings]
+provider = "none"
+model = "all-MiniLM-L6-v2"
+dimension = 384
+
+[index]
+watch = false
+batch_size = 2
+exclude = ["**/target/**", "**/.git/**", "**/.obsidian/**"]
+
+[linker]
+mention_threshold = 0.75
+auto_promote_explains = false
+
+[mcp]
+transport = "stdio"

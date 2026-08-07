@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/session-start.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/stop-postcheck.sh",
+        "loop_limit": 1
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/guard-commit.sh",
+        "matcher": "git\\s+commit"
+      }
+    ]
+  }
+}

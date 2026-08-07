@@ -1,0 +1,12 @@
+---
+description: Testing expectations when changing CodeBrain code
+globs: "**/{*.rs,**/tests/**,testdata/**}"
+alwaysApply: false
+---
+
+# Testing
+
+- Map each behavior change to a test (`docs/agent/TESTING.md`)
+- DB tests use Surreal **memory** + `tempfile` — never the user’s real data dir
+- Keep `migrate_is_idempotent` green when touching schema
+- Default tests must not need network

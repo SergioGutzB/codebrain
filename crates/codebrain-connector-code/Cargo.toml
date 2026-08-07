@@ -1,0 +1,26 @@
+[package]
+name = "codebrain-connector-code"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Tree-sitter code repository connector for CodeBrain (Phase 1)"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+blake3.workspace = true
+chrono.workspace = true
+codebrain-connector.workspace = true
+ignore.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tree-sitter.workspace = true
+tree-sitter-python.workspace = true
+tree-sitter-ruby.workspace = true
+tree-sitter-rust.workspace = true
+tree-sitter-typescript.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

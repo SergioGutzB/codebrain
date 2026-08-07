@@ -1,0 +1,32 @@
+[package]
+name = "codebrain-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Domain types, config, and orchestration for CodeBrain"
+
+[dependencies]
+anyhow.workspace = true
+blake3.workspace = true
+chrono.workspace = true
+codebrain-connector.workspace = true
+codebrain-connector-code.workspace = true
+codebrain-connector-obsidian.workspace = true
+codebrain-connector-saas.workspace = true
+codebrain-db.workspace = true
+codebrain-embed.workspace = true
+directories.workspace = true
+figment.workspace = true
+notify.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+shellexpand.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+toml = { version = "0.8", features = ["parse"] }
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true, features = ["test-util"] }

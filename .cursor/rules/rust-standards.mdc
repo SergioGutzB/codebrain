@@ -1,0 +1,47 @@
+---
+description: Rust — no panic, errors, traits, async/concurrency, memory efficiency
+globs: "**/*.rs"
+alwaysApply: false
+---
+
+# Rust standards (CodeBrain)
+
+Full text: `docs/agent/CODING_STANDARDS.md` · examples: `docs/agent/RUST_PRACTICES.md`
+
+## Crates & modules
+
+- One subsystem/responsibility per workspace crate; no business logic in CLI
+- Modules are isolated by capability, private by default, and re-export stable contracts from `lib.rs`
+- No `utils`/`common` god crates, cyclic dependencies, global mutable state, or duplicated DTOs
+- Every crate must be independently testable (`cargo test -p <crate>`)
+- Inject trait implementations at I/O/storage boundaries for testability
+
+## Errors — no panic
+
+- Libs: `thiserror` + `Result`. Edges: `anyhow` + `context`
+- **Forbid** in non-test code: `unwrap` / `expect` / `panic!` / `todo!` / `unimplemented!` / `unreachable!`
+- Prefer `get` over indexing; stubs use `bail!("… Phase N")`
+- Logging: `tracing` only (no `println!` in libs)
+
+## Traits
+
+- Vary behavior with traits (`Connector`, future `Embedder`)
+- Small traits; generics/static dispatch in hot paths; `dyn` at plugin boundaries
+- `async_trait` on public async traits; bounds: `Send + Sync` where shared
+
+## Async & concurrency
+
+- Tokio only — never block runtime (`tokio::fs` / `spawn_blocking`)
+- No `std::sync::Mutex` across `.await` — use `tokio::sync::*`
+- Bound work with `Semaphore` / batching; queues via `mpsc`
+
+## Memory
+
+- Borrow at boundaries (`&str`, `&[u8]`); own at edges
+- No clones in hot loops; batch I/O (`batch_size`); `with_capacity` when sized
+- Do not load entire repos/vaults into memory
+
+## Always
+
+- `cargo fmt` + clippy deny (see `validate.sh`)
+- Crate boundaries in `CODING_STANDARDS.md`

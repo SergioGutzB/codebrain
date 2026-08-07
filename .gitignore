@@ -1,0 +1,41 @@
+# Rust
+/target/
+**/*.rs.bk
+*.profraw
+*.profdata
+
+# Local CodeBrain config & embedded data (never commit personal paths/tokens)
+codebrain.toml
+/.codebrain/
+*.db
+*.surql.bak
+
+# Secrets
+.env
+.env.*
+!.env.example
+credentials.json
+*.pem
+*.key
+id_rsa
+id_rsa.*
+
+# OS / editors
+.DS_Store
+.AppleDouble
+.idea/
+.vscode/
+*.swp
+*~
+.direnv/
+
+# Logs & local bench/output artifacts
+*.log
+/bench-out/
+/tmp/
+flamegraph.svg
+coverage/
+lcov.info
+
+# Optional local override (keep example tracked)
+codebrain.local.toml

@@ -1,0 +1,6 @@
+# Clippy — aligned with scripts/agent/validate.sh and docs/agent/CODING_STANDARDS.md
+
+# Allow panic-family helpers inside tests / doctests / benches only
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true

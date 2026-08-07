@@ -1,0 +1,28 @@
+[package]
+name = "codebrain-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "MCP server exposing CodeBrain tools to LLM agents"
+
+[dependencies]
+anyhow.workspace = true
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
+codebrain-core.workspace = true
+codebrain-db.workspace = true
+codebrain-embed.workspace = true
+rmcp = { workspace = true, features = ["server", "macros", "transport-io", "transport-streamable-http-server"] }
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+codebrain-connector.workspace = true
+codebrain-embed.workspace = true
+chrono.workspace = true
+rmcp = { workspace = true, features = ["server", "macros", "client", "transport-async-rw"] }
+tempfile = "3"
+tokio = { workspace = true, features = ["test-util", "io-util"] }

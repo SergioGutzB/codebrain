@@ -1,0 +1,21 @@
+[package]
+name = "codebrain-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "CodeBrain CLI — init, index, serve, doctor, status"
+
+[[bin]]
+name = "codebrain"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+codebrain-core.workspace = true
+codebrain-db.workspace = true
+codebrain-mcp.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

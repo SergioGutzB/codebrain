@@ -1,0 +1,80 @@
+# CodeBrain configuration example
+# Copy to ./codebrain.toml or the platform config dir, then edit paths.
+
+[database]
+# Embedded SurrealKV store
+path = "~/.local/share/codebrain/db"
+
+# Uncomment and point at your repositories / vaults:
+#
+# [sources.backend]
+# kind = "git_repo"
+# path = "~/projects/my-service"
+# languages = ["rust", "typescript", "python"]
+#
+# [sources.notes]
+# kind = "obsidian_vault"
+# path = "~/Obsidian/Engineering"
+#
+# Jira (read-only). Auth via env vars (never commit tokens):
+#   JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN
+#
+# [sources.tickets]
+# kind = "jira"
+# jql = "project = MM AND updated >= -30d ORDER BY updated DESC"
+# max_issues = 100
+# # path = "https://your.atlassian.net"  # optional override of JIRA_BASE_URL
+#
+# Confluence (same Atlassian API token / env vars as Jira):
+#
+# [sources.wiki]
+# kind = "confluence"
+# cql = "type = page AND space = \"ENG\" ORDER BY lastmodified DESC"
+# max_issues = 50
+#
+# Notion (internal integration secret; share pages with the integration):
+#   NOTION_TOKEN (or NOTION_API_KEY)
+#
+# [sources.notion]
+# kind = "notion"
+# # query = "architecture"
+# max_issues = 50
+
+[embeddings]
+# none | fastembed | openai_compatible
+provider = "none"
+model = "all-MiniLM-L6-v2"
+dimension = 384
+# base_url = "https://api.openai.com/v1"
+# api_key_env = "OPENAI_API_KEY"
+
+[index]
+watch = false
+# Milliseconds to coalesce filesystem events before partial reindex
+debounce_ms = 750
+batch_size = 64
+exclude = [
+  "**/node_modules/**",
+  "**/target/**",
+  "**/.git/**",
+  "**/.obsidian/**",
+]
+
+[linker]
+mention_threshold = 0.75
+auto_promote_explains = false
+
+[mcp]
+# stdio (Cursor/Claude default) | http (streamable HTTP)
+transport = "stdio"
+bind = "127.0.0.1:8765"
+# Only enable on trusted networks; default refuses non-loopback binds
+allow_remote = false
+
+# Architectural decision capture (MCP tool add_architectural_decision)
+[adr]
+# When false, the tool never writes into the vault filesystem
+write_vault = false
+vault_source = "notes"
+directory = "ADR"
+created_by = "agent"

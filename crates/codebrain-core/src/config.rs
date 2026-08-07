@@ -149,14 +149,12 @@ impl SourceConfig {
 
     /// Notion integration token (`NOTION_TOKEN` / `NOTION_API_KEY`, or `token_env`).
     pub fn notion_auth(&self) -> anyhow::Result<codebrain_connector_saas::NotionAuth> {
-        let candidates = if self.token_env != default_jira_token_env() {
+        // Never fall back to the Jira token: a Jira credential is not a Notion secret
+        // and would only surface as a 401 deep inside the connector.
+        let candidates: Vec<String> = if self.token_env != default_jira_token_env() {
             vec![self.token_env.clone()]
         } else {
-            vec![
-                "NOTION_TOKEN".into(),
-                "NOTION_API_KEY".into(),
-                self.token_env.clone(),
-            ]
+            vec!["NOTION_TOKEN".into(), "NOTION_API_KEY".into()]
         };
         for key in candidates {
             if let Ok(token) = std::env::var(&key) {
